@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Face Memory Challenge - Precision Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="client-integration.js"></script>
+
+</head>
+<body>
+    <div id="app">
+        <!-- Particle Background -->
+        <div id="particles"></div>
+        
+        <!-- Sound Effects -->
+        <audio id="join-sound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        <audio id="correct-sound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+        <audio id="wrong-sound" preload="auto">
+            <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT" type="audio/wav">
+        </audio>
+
+        <!-- Onam Decorations -->
+        <div class="onam-decorations">
+            <div class="pookalam-pattern"></div>
+            <div class="coconut-leaves"></div>
+            <div class="marigold-flowers"></div>
+        </div>
+
+        <header class="onam-header">
+            <div class="logo-container">
+                <div class="logo-icon">🎯</div>
+                <div class="logo-text">
+                    <h1>Face Memory Challenge</h1>
+                    <p class="malayalam-subtitle">Precision Positioning Game</p>
+                    <p class="onam-tagline">🎯 Test Your Memory & Accuracy! 🎯</p>
+                </div>
+            </div>
+            <div class="onam-indicator">
+                <span class="pulse-dot"></span>
+                <span class="onam-live">GAME LIVE</span>
+            </div>
+        </header>
+
+        <!-- Client Join Phase -->
+        <div id="setup-phase" class="phase active">
+            <div class="lobby-container">
+                <div class="lobby-header">
+                    <h2>🎯 Join the Memory Challenge! 🎯</h2>
+                    <p class="english-subtitle">Enter Room ID and your name to join the game!</p>
+                    
+                    <!-- Scoring Guide -->
+                    <div class="scoring-guide">
+                        <h4>🏆 Scoring System</h4>
+                        <div class="score-rules">
+                            <div class="score-rule perfect">🎯 Exact Position: <strong>+100 points</strong></div>
+                            <div class="score-rule near">🌟 Adjacent Cell: <strong>+50 points</strong></div>
+                            <div class="score-rule wrong">❌ Wrong Position: <strong>0 points</strong></div>
+                            <div class="score-rule penalty">⚠️ Outside Section: <strong>-10 points</strong></div>
+                            <div class="score-rule matrix-penalty">🚫 Outside Matrix: <strong>-25 points</strong></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Client Join Section -->
+                <div class="client-join-section">
+                    <h3>🎮 Join Game Room</h3>
+                    <p class="join-subtitle">Ask the admin for the Room ID to join the game</p>
+                    
+                    <div class="join-form">
+                        <div class="input-group">
+                            <label for="room-id-input">Room ID:</label>
+                            <input type="text" id="room-id-input" placeholder="Enter Room ID" maxlength="10">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="player-name-input">Your Name:</label>
+                            <input type="text" id="player-name-input" placeholder="Enter Your Name" maxlength="20">
+                        </div>
+                        
+                        <button id="join-room-btn" class="join-btn">
+                            <span>🎯</span>
+                            JOIN ROOM
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Waiting Room -->
+                <div class="waiting-room" id="waiting-room" style="display: none;">
+                    <div class="room-info-card">
+                        <h3>🎮 Room: <span id="joined-room-id">-</span></h3>
+                        <div class="waiting-status">
+                            <div class="status-item">
+                                <span class="label">Players:</span>
+                                <span class="value" id="waiting-player-count">0</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="label">Status:</span>
+                                <span class="value" id="waiting-status">Waiting for admin to start...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="players-grid" id="players-setup">
+                        <!-- Players will be added dynamically -->
+                    </div>
+                    
+                    <div class="waiting-message">
+                        <div class="loading-spinner"></div>
+                        <p>Waiting for the admin to start the game...</p>
+                        <small>The admin will upload the image and start the rounds</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question Phase -->
+        <div id="question-phase" class="phase">
+            <div class="question-container">
+                <div class="question-header">
+                    <div class="question-number">
+                        Round<span id="question-num">1</span> of <span id="total-questions">10</span>
+                    </div>
+                    <div class="timer-container">
+                        <div class="timer-circle">
+                            <div class="timer-fill"></div>
+                            <span id="timer">3</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="question-content">
+                    <h2 id="question-text">Memorize this face and target position!</h2>
+                    <div class="face-showcase" id="face-showcase">
+                        <!-- Face will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Phase -->
+        <div id="game-phase" class="phase">
+            <div class="game-arena">
+                <div class="arena-header">
+                    <div class="current-player-info">
+                        <div class="player-avatar">🎯</div>
+                        <div class="player-details">
+                            <span class="player-name" id="current-player">Player 1</span>
+                            <span class="player-action">Click where the target was!</span>
+                        </div>
+                    </div>
+                    
+                    <div class="game-timer">
+                        <div class="timer-bar">
+                            <div class="timer-progress" id="timer-progress"></div>
+                        </div>
+                        <span class="timer-text">Time to guess!</span>
+                    </div>
+                </div>
+                
+                <div class="game-board-arena">
+                    <div id="game-board" class="game-board"></div>
+                    <div id="face-display" class="face-display"></div>
+                </div>
+
+                <div class="live-leaderboard">
+                    <div class="leaderboard-header">
+                        <span class="trophy-icon">🏆</span>
+                        <span>Live Rankings</span>
+                    </div>
+                    <div id="scores" class="scores-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Phase -->
+        <div id="results-phase" class="phase">
+            <div class="results-container">
+                <div class="result-header" id="result-header">
+                    <div class="result-icon" id="result-icon">🎯</div>
+                    <h2 id="result-title">Great Shot!</h2>
+                    <div class="points-earned" id="points-earned">+85 points</div>
+                </div>
+                
+                <div class="result-details">
+                    <div class="accuracy-display">
+                        <div class="accuracy-circle">
+                            <span id="accuracy-percent">85%</span>
+                            <small>accuracy</small>
+                        </div>
+                    </div>
+                    
+                    <div class="answer-reveal">
+                        <h3>Correct Position:</h3>
+                        <div id="answer-board" class="mini-board"></div>
+                    </div>
+                </div>
+                
+                <div class="next-question-timer">
+                    <span>Next question in <span id="next-timer">3</span>s</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final Results -->
+        <div id="final-results" class="phase">
+            <div class="podium-container">
+                <div class="confetti"></div>
+                <h1 class="final-title">🎉 Game Over! 🎉</h1>
+                
+                <div class="podium">
+                    <div class="podium-place second" id="second-place">
+                        <div class="place-medal">🥈</div>
+                        <div class="place-info">
+                            <div class="place-name">Player 2</div>
+                            <div class="place-score">850 pts</div>
+                        </div>
+                    </div>
+                    
+                    <div class="podium-place first" id="first-place">
+                        <div class="place-medal">🥇</div>
+                        <div class="place-info">
+                            <div class="place-name">Player 1</div>
+                            <div class="place-score">1200 pts</div>
+                        </div>
+                    </div>
+                    
+                    <div class="podium-place third" id="third-place">
+                        <div class="place-medal">🥉</div>
+                        <div class="place-info">
+                            <div class="place-name">Player 3</div>
+                            <div class="place-score">720 pts</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="final-actions">
+                    <button id="play-again-btn" class="play-again-btn">
+                        🔄 Play Again
+                    </button>
+                    <button id="new-game-btn" class="new-game-btn">
+                        ➕ New Game
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calibration Modal -->
+        <div id="calibration-modal" class="modal">
+            <div class="modal-content">
+                <h3>🎯 Click on Target Position 🎯</h3>
+                <p class="modal-subtitle">Click on the position you want players to find</p>
+                <div class="calibration-image-container">
+                    <img id="calibration-image" src="" alt="Calibration">
+                    <div id="forehead-marker" class="forehead-marker"></div>
+                </div>
+                <div class="modal-buttons">
+                    <button id="confirm-calibration">✅ Confirm Position</button>
+                    <button id="cancel-calibration">❌ Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+    <script src="client-script.js"></script></script>
+</body>
+</html>

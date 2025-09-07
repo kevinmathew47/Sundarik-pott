@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Face Memory Challenge - Admin Panel</title>
+    <link rel="stylesheet" href="admin-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="admin-app">
+        <!-- Admin Header -->
+        <header class="admin-header">
+            <div class="admin-logo">
+                <div class="logo-icon">👑</div>
+                <div class="logo-text">
+                    <h1>Admin Control Panel</h1>
+                    <p class="subtitle">Face Memory Challenge</p>
+                </div>
+            </div>
+            <div class="admin-status">
+                <span class="status-dot" id="connection-status"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Admin Content -->
+        <div class="admin-container">
+            <!-- Room Management Section -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h2>🎮 Room Management</h2>
+                </div>
+                
+                <div class="room-controls">
+                    <div class="control-group">
+                        <label for="room-id-input">Room ID:</label>
+                        <input type="text" id="room-id-input" placeholder="Enter custom Room ID" maxlength="10">
+                        <button id="generate-room-btn" class="secondary-btn">Generate Random</button>
+                    </div>
+                    
+                    <div class="control-group">
+                        <button id="create-room-btn" class="primary-btn">
+                            <span class="btn-icon">🚀</span>
+                            Create Room
+                        </button>
+                        <button id="close-room-btn" class="danger-btn" disabled>
+                            <span class="btn-icon">🚫</span>
+                            Close Room
+                        </button>
+                    </div>
+                </div>
+
+                <div class="room-info" id="room-info" style="display: none;">
+                    <div class="info-card">
+                        <h3>Active Room</h3>
+                        <div class="room-details">
+                            <div class="detail-item">
+                                <span class="label">Room ID:</span>
+                                <span class="value" id="current-room-id">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Players:</span>
+                                <span class="value" id="player-count">0</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Status:</span>
+                                <span class="value" id="room-status">Waiting</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Management Section -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h2>🖼️ Image Management</h2>
+                </div>
+                
+                <div class="image-controls">
+                    <div class="image-upload-area">
+                        <input type="file" id="admin-image-input" accept="image/*" style="display: none;">
+                        <div class="upload-zone" id="upload-zone">
+                            <div class="upload-placeholder">
+                                <span class="upload-icon">📸</span>
+                                <p>Click to upload game image</p>
+                                <small>Supports JPG, PNG, GIF (Max 5MB)</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="image-preview" id="image-preview" style="display: none;">
+                        <img id="preview-image" src="" alt="Game Image">
+                        <div class="image-actions">
+                            <button id="change-image-btn" class="secondary-btn">Change Image</button>
+                            <button id="remove-image-btn" class="danger-btn">Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="target-calibration" id="target-calibration" style="display: none;">
+                    <h3>🎯 Target Position</h3>
+                    <div class="calibration-area">
+                        <div class="calibration-image-container">
+                            <img id="calibration-image" src="" alt="Calibration">
+                            <div id="target-marker" class="target-marker"></div>
+                        </div>
+                        <div class="calibration-controls">
+                            <p>Click on the image to set the target position</p>
+                            <div class="position-info">
+                                <span>Position: </span>
+                                <span id="target-position">Not set</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Settings Section -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h2>⚙️ Game Settings</h2>
+                </div>
+                
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label for="view-time">View Time (seconds):</label>
+                        <input type="number" id="view-time" value="5" min="1" max="30">
+                    </div>
+                    <div class="setting-item">
+                        <label for="guess-time">Guess Time (seconds):</label>
+                        <input type="number" id="guess-time" value="20" min="5" max="60">
+                    </div>
+                    <div class="setting-item">
+                        <label for="total-rounds">Total Rounds:</label>
+                        <input type="number" id="total-rounds" value="10" min="1" max="20">
+                    </div>
+                    <div class="setting-item">
+                        <label for="min-players">Min Players:</label>
+                        <input type="number" id="min-players" value="2" min="1" max="10">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Players Management Section -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h2>👥 Connected Players</h2>
+                </div>
+                
+                <div class="players-list" id="players-list">
+                    <div class="no-players">
+                        <p>No players connected</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Control Section -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h2>🎮 Game Control</h2>
+                </div>
+                
+                <div class="game-controls">
+                    <button id="start-game-btn" class="primary-btn large-btn" disabled>
+                        <span class="btn-icon">🚀</span>
+                        Start Game
+                    </button>
+                    
+                    <div class="control-buttons">
+                        <button id="pause-game-btn" class="secondary-btn" disabled>
+                            <span class="btn-icon">⏸️</span>
+                            Pause
+                        </button>
+                        <button id="next-round-btn" class="secondary-btn" disabled>
+                            <span class="btn-icon">⏭️</span>
+                            Next Round
+                        </button>
+                        <button id="end-game-btn" class="danger-btn" disabled>
+                            <span class="btn-icon">🛑</span>
+                            End Game
+                        </button>
+                    </div>
+                </div>
+
+                <div class="game-status-panel" id="game-status-panel" style="display: none;">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="label">Current Round:</span>
+                            <span class="value" id="current-round">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Game State:</span>
+                            <span class="value" id="game-state">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Time Remaining:</span>
+                            <span class="value" id="time-remaining">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Leaderboard Section -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h2>🏆 Live Leaderboard</h2>
+                </div>
+                
+                <div class="leaderboard" id="admin-leaderboard">
+                    <div class="no-scores">
+                        <p>Game not started</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Container -->
+        <div id="notification-container"></div>
+    </div>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+    <script src="admin-script.js"></script>
+</body>
+</html>

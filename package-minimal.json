@@ -1,0 +1,29 @@
+{
+  "name": "face-memory-challenge-backend",
+  "version": "1.0.0",
+  "description": "Real-time multiplayer Face Memory Challenge game backend",
+  "main": "server-simple.js",
+  "scripts": {
+    "start": "node server-simple.js",
+    "dev": "node server-simple.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "multiplayer",
+    "game",
+    "socket.io",
+    "real-time",
+    "memory-game"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "4.19.2",
+    "socket.io": "4.8.0",
+    "cors": "2.8.5",
+    "uuid": "10.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
