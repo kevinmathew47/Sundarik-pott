@@ -54,14 +54,17 @@ class ClientGame {
         });
 
         this.socket.on('game-started', (data) => {
+            console.log('🚀 Received game-started event:', data);
             this.handleGameStarted(data);
         });
 
         this.socket.on('show-image', (data) => {
+            console.log('📸 Received show-image event:', data);
             this.showImagePhase(data);
         });
 
         this.socket.on('hide-image', (data) => {
+            console.log('🎯 Received hide-image event:', data);
             this.startGuessingPhase(data);
         });
 
@@ -193,6 +196,17 @@ class ClientGame {
                     <div class="loading-spinner"></div>
                     <h2>🎯 Get Ready!</h2>
                     <p>The admin is preparing the first round...</p>
+                    <button onclick="forceGuessPhase()" style="
+                        margin-top: 20px;
+                        padding: 10px 20px;
+                        background: #FF8C00;
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        font-size: 16px;
+                        font-weight: bold;
+                    ">🔧 Skip to Game Board (Debug)</button>
                 </div>
             `;
             overlay.style.cssText = `
@@ -419,6 +433,20 @@ class ClientGame {
             gameBoard.style.zIndex = '10';
             gameBoard.style.border = '5px solid red'; // Temporary debug border
             
+            // Ensure parent containers are also visible
+            const gamePhase = document.getElementById('game-phase');
+            const gameBoardArena = document.querySelector('.game-board-arena');
+            
+            if (gamePhase) {
+                gamePhase.style.display = 'block';
+                gamePhase.style.visibility = 'visible';
+            }
+            
+            if (gameBoardArena) {
+                gameBoardArena.style.display = 'flex';
+                gameBoardArena.style.visibility = 'visible';
+            }
+            
             console.log(`Game board recreated with ${gameBoard.children.length} cells`);
             console.log('Game board computed style:', window.getComputedStyle(gameBoard).display);
             console.log('Game board dimensions:', gameBoard.offsetWidth, 'x', gameBoard.offsetHeight);
@@ -598,10 +626,31 @@ class ClientGame {
     // Test function to manually show game board (for debugging)
     testShowGameBoard() {
         console.log('=== Manual Game Board Test ===');
+        
+        // Remove all active phases
         document.querySelectorAll('.phase').forEach(phase => phase.classList.remove('active'));
-        document.getElementById('game-phase').classList.add('active');
+        
+        // Activate game phase
+        const gamePhase = document.getElementById('game-phase');
+        gamePhase.classList.add('active');
+        
+        // Remove any waiting overlay
+        const overlay = gamePhase.querySelector('.game-waiting-overlay');
+        if (overlay) {
+            overlay.remove();
+            console.log('Removed waiting overlay');
+        }
+        
+        // Force recreate game board
         this.forceRecreateGameBoard();
+        
+        // Enable clicking for testing
+        this.enableGridClicking();
+        
+        // Debug the result
         this.debugGameBoard();
+        
+        console.log('=== Game Board Test Complete ===');
     }
 
     showNotification(message, type = 'info') {
@@ -649,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof io !== 'undefined') {
         clientGame = new ClientGame();
         
-        // Add global test function for debugging
+        // Add global test functions for debugging
         window.testGameBoard = () => {
             if (clientGame) {
                 clientGame.testShowGameBoard();
@@ -658,7 +707,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         
-        console.log('Client game initialized. Use testGameBoard() to test the game board display.');
+        window.forceGuessPhase = () => {
+            if (clientGame) {
+                console.log('Forcing guess phase...');
+                clientGame.startGuessingPhase({ guessTime: 30000 });
+            } else {
+                console.error('Client game not initialized');
+            }
+        };
+        
+        window.debugClient = () => {
+            if (clientGame) {
+                console.log('=== Client Debug Info ===');
+                console.log('Game state:', clientGame.gameState);
+                console.log('Room ID:', clientGame.roomId);
+                console.log('Player name:', clientGame.playerName);
+                console.log('Socket connected:', clientGame.socket?.connected);
+                console.log('Current round:', clientGame.currentRound);
+                console.log('Players:', clientGame.players);
+                clientGame.debugGameBoard();
+            }
+        };
+        
+        console.log('Client game initialized.');
+        console.log('Debug functions available:');
+        console.log('- testGameBoard() - Test game board display');
+        console.log('- forceGuessPhase() - Force guessing phase');
+        console.log('- debugClient() - Show debug info');
     } else {
         console.error('Socket.IO not available');
         alert('Socket.IO not loaded. Please check your internet connection.');
