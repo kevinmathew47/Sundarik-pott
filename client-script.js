@@ -13,7 +13,13 @@ class ClientGame {
         
         this.initializeSocket();
         this.initializeEventListeners();
-        this.createGameBoard();
+        
+        // Create game board after DOM is ready
+        setTimeout(() => {
+            console.log('Initial game board creation...');
+            this.createGameBoard();
+            this.debugGameBoard();
+        }, 100);
     }
 
     initializeSocket() {
@@ -171,16 +177,38 @@ class ClientGame {
     }
 
     showGameWaitingMessage() {
-        // Create a waiting message for the game phase
+        // Switch to game phase but show waiting message
+        document.querySelectorAll('.phase').forEach(phase => phase.classList.remove('active'));
+        document.getElementById('game-phase').classList.add('active');
+        
+        // Create waiting overlay instead of replacing entire content
         const gamePhase = document.getElementById('game-phase');
-        gamePhase.innerHTML = `
-            <div class="game-waiting-message">
-                <div class="loading-spinner"></div>
-                <h2>🎯 Get Ready!</h2>
-                <p>The admin is preparing the first round...</p>
-            </div>
-        `;
-        gamePhase.classList.add('active');
+        const existingOverlay = gamePhase.querySelector('.game-waiting-overlay');
+        
+        if (!existingOverlay) {
+            const overlay = document.createElement('div');
+            overlay.className = 'game-waiting-overlay';
+            overlay.innerHTML = `
+                <div class="game-waiting-message">
+                    <div class="loading-spinner"></div>
+                    <h2>🎯 Get Ready!</h2>
+                    <p>The admin is preparing the first round...</p>
+                </div>
+            `;
+            overlay.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 250, 205, 0.95);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+            gamePhase.appendChild(overlay);
+        }
     }
 
     showImagePhase(data) {
@@ -224,9 +252,27 @@ class ClientGame {
     }
 
     startGuessingPhase(data) {
+        console.log('=== Starting Guessing Phase ===');
+        
         // Switch to game phase
         document.querySelectorAll('.phase').forEach(phase => phase.classList.remove('active'));
         document.getElementById('game-phase').classList.add('active');
+        
+        console.log('Game phase activated');
+        
+        // Remove waiting overlay if it exists
+        const gamePhase = document.getElementById('game-phase');
+        const overlay = gamePhase.querySelector('.game-waiting-overlay');
+        if (overlay) {
+            console.log('Removing waiting overlay');
+            overlay.remove();
+        }
+        
+        // Force recreate game board to ensure it's visible
+        this.forceRecreateGameBoard();
+        
+        // Debug the game board state after recreation
+        this.debugGameBoard();
         
         // Update current player info (show that it's your turn)
         document.getElementById('current-player').textContent = this.playerName;
@@ -241,6 +287,8 @@ class ClientGame {
         this.enableGridClicking();
         
         this.showNotification('🎯 Click on the grid where you saw the target!', 'info');
+        
+        console.log('=== Guessing Phase Setup Complete ===');
     }
 
     startGuessTimer(duration) {
@@ -340,6 +388,76 @@ class ClientGame {
         }
     }
 
+    // Force recreate game board
+    forceRecreateGameBoard() {
+        console.log('=== Force Recreating Game Board ===');
+        const gameBoard = document.getElementById('game-board');
+        console.log('Game board element found:', gameBoard);
+        
+        if (gameBoard) {
+            // Clear existing content
+            gameBoard.innerHTML = '';
+            console.log('Cleared existing game board content');
+            
+            // Create the grid
+            this.createGameBoard();
+            console.log('Called createGameBoard()');
+            
+            // Make sure it's visible with explicit styles
+            gameBoard.style.display = 'grid';
+            gameBoard.style.gridTemplateColumns = 'repeat(16, 1fr)';
+            gameBoard.style.gridTemplateRows = 'repeat(16, 1fr)';
+            gameBoard.style.gap = '2px';
+            gameBoard.style.width = '640px';
+            gameBoard.style.height = '640px';
+            gameBoard.style.background = '#FF8C00';
+            gameBoard.style.padding = '15px';
+            gameBoard.style.borderRadius = '20px';
+            gameBoard.style.visibility = 'visible';
+            gameBoard.style.position = 'relative';
+            gameBoard.style.margin = '0 auto';
+            gameBoard.style.zIndex = '10';
+            gameBoard.style.border = '5px solid red'; // Temporary debug border
+            
+            console.log(`Game board recreated with ${gameBoard.children.length} cells`);
+            console.log('Game board computed style:', window.getComputedStyle(gameBoard).display);
+            console.log('Game board dimensions:', gameBoard.offsetWidth, 'x', gameBoard.offsetHeight);
+            console.log('Game board parent:', gameBoard.parentElement);
+        } else {
+            console.error('Game board element not found!');
+            // Try to find it by class
+            const boardByClass = document.querySelector('.game-board');
+            console.log('Game board by class:', boardByClass);
+        }
+        console.log('=== Game Board Recreation Complete ===');
+    }
+
+    // Debug function to check game board state
+    debugGameBoard() {
+        const gameBoard = document.getElementById('game-board');
+        const gamePhase = document.getElementById('game-phase');
+        const gameBoardArena = document.querySelector('.game-board-arena');
+        
+        console.log('=== Game Board Debug ===');
+        console.log('Game board element:', gameBoard);
+        console.log('Game board children:', gameBoard ? gameBoard.children.length : 'N/A');
+        console.log('Game board display:', gameBoard ? window.getComputedStyle(gameBoard).display : 'N/A');
+        console.log('Game board visibility:', gameBoard ? window.getComputedStyle(gameBoard).visibility : 'N/A');
+        console.log('Game board dimensions:', gameBoard ? `${gameBoard.offsetWidth}x${gameBoard.offsetHeight}` : 'N/A');
+        console.log('Game phase element:', gamePhase);
+        console.log('Game phase active:', gamePhase ? gamePhase.classList.contains('active') : 'N/A');
+        console.log('Game phase display:', gamePhase ? window.getComputedStyle(gamePhase).display : 'N/A');
+        console.log('Game board arena:', gameBoardArena);
+        console.log('Game board arena display:', gameBoardArena ? window.getComputedStyle(gameBoardArena).display : 'N/A');
+        console.log('Game state:', this.gameState);
+        console.log('All phases:', Array.from(document.querySelectorAll('.phase')).map(p => ({
+            id: p.id,
+            active: p.classList.contains('active'),
+            display: window.getComputedStyle(p).display
+        })));
+        console.log('========================');
+    }
+
     handleGameEnded(data) {
         this.gameState = 'ended';
         
@@ -426,6 +544,13 @@ class ClientGame {
 
     createGameBoard() {
         const gameBoard = document.getElementById('game-board');
+        
+        if (!gameBoard) {
+            console.error('Game board element not found!');
+            return;
+        }
+        
+        console.log('Creating 16x16 game board...');
         gameBoard.innerHTML = '';
         
         for (let row = 0; row < 16; row++) {
@@ -448,6 +573,8 @@ class ClientGame {
                 gameBoard.appendChild(cell);
             }
         }
+        
+        console.log(`Game board created with ${gameBoard.children.length} cells`);
     }
 
     clearGameBoard() {
@@ -466,6 +593,15 @@ class ClientGame {
             return a & a;
         }, 0);
         return colors[Math.abs(hash) % colors.length];
+    }
+
+    // Test function to manually show game board (for debugging)
+    testShowGameBoard() {
+        console.log('=== Manual Game Board Test ===');
+        document.querySelectorAll('.phase').forEach(phase => phase.classList.remove('active'));
+        document.getElementById('game-phase').classList.add('active');
+        this.forceRecreateGameBoard();
+        this.debugGameBoard();
     }
 
     showNotification(message, type = 'info') {
@@ -512,6 +648,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if Socket.IO is available
     if (typeof io !== 'undefined') {
         clientGame = new ClientGame();
+        
+        // Add global test function for debugging
+        window.testGameBoard = () => {
+            if (clientGame) {
+                clientGame.testShowGameBoard();
+            } else {
+                console.error('Client game not initialized');
+            }
+        };
+        
+        console.log('Client game initialized. Use testGameBoard() to test the game board display.');
     } else {
         console.error('Socket.IO not available');
         alert('Socket.IO not loaded. Please check your internet connection.');
