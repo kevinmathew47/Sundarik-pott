@@ -17,7 +17,7 @@ const io = socketIo(server, {
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static('public'));
+app.use(express.static(__dirname)); // Serve static files from current directory
 
 // Simple in-memory storage (replace with Redis in production)
 class SimpleGameManager {
@@ -610,13 +610,27 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Serve static files
+// Serve static files from current directory
+app.use(express.static('.'));
+
+// Serve main game page
 app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/index.html');
+});
+
+// Serve admin panel
+app.get('/admin.html', (req, res) => {
+    res.sendFile(__dirname + '/admin.html');
+});
+
+// Health check endpoint
+app.get('/status', (req, res) => {
     res.send(`
         <h1>🎯 Face Memory Challenge Server</h1>
         <p>Server is running and ready for multiplayer games!</p>
         <p>Active Games: ${gameManager.games.size}</p>
         <p>Uptime: ${Math.floor(process.uptime())} seconds</p>
+        <p><a href="/">🎮 Play Game</a> | <a href="/admin.html">👑 Admin Panel</a></p>
     `);
 });
 

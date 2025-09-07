@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🎯 Sundarik Pott - Face Memory Challenge
 
 A real-time multiplayer memory game where players memorize face positions and click on targets with precision scoring.
@@ -130,3 +131,6 @@ Created with ❤️ for multiplayer gaming experiences.
 ---
 
 **Ready to test your memory and precision? Start playing Sundarik Pott!** 🎮✨
+=======
+# Sundarik-pott
+>>>>>>> 1e0a90842469945163882fe2906f50d7b9c8c9ec
