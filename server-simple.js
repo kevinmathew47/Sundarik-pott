@@ -44,7 +44,7 @@ class SimpleGameManager {
             },
             createdAt: new Date()
         };
-        
+
         this.games.set(roomId, game);
         this.playerRooms.set(adminId, roomId);
         return game;
@@ -53,7 +53,7 @@ class SimpleGameManager {
     joinGame(roomCode, playerId, playerName) {
         const game = this.games.get(roomCode);
         if (!game) return null;
-        
+
         // Check if player already exists
         const existingPlayer = game.players.find(p => p.id === playerId);
         if (existingPlayer) {
@@ -61,7 +61,7 @@ class SimpleGameManager {
             this.playerRooms.set(playerId, roomCode);
             return game;
         }
-        
+
         // Add new player
         game.players.push({
             id: playerId,
@@ -70,7 +70,7 @@ class SimpleGameManager {
             isHost: false,
             connected: true
         });
-        
+
         this.playerRooms.set(playerId, roomCode);
         return game;
     }
@@ -78,14 +78,14 @@ class SimpleGameManager {
     removePlayer(playerId) {
         const roomCode = this.playerRooms.get(playerId);
         if (!roomCode) return null;
-        
+
         const game = this.games.get(roomCode);
         if (!game) return null;
-        
+
         const playerIndex = game.players.findIndex(p => p.id === playerId);
         if (playerIndex !== -1) {
             game.players[playerIndex].connected = false;
-            
+
             // If host leaves, assign new host
             if (game.players[playerIndex].isHost) {
                 const nextHost = game.players.find(p => p.connected && p.id !== playerId);
@@ -95,7 +95,7 @@ class SimpleGameManager {
                 }
             }
         }
-        
+
         this.playerRooms.delete(playerId);
         return game;
     }
@@ -103,12 +103,12 @@ class SimpleGameManager {
     updatePlayerScore(roomCode, playerId, points) {
         const game = this.games.get(roomCode);
         if (!game) return null;
-        
+
         const player = game.players.find(p => p.id === playerId);
         if (player) {
             player.score += points;
         }
-        
+
         return game;
     }
 
@@ -118,19 +118,19 @@ class SimpleGameManager {
         for (let i = 0; i < 6; i++) {
             result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-        
+
         // Make sure code is unique
         if (this.games.has(result)) {
             return this.generateRoomCode();
         }
-        
+
         return result;
     }
 
     getLeaderboard(roomCode) {
         const game = this.games.get(roomCode);
         if (!game) return [];
-        
+
         return game.players
             .filter(p => p.connected)
             .sort((a, b) => b.score - a.score)
@@ -157,7 +157,7 @@ io.on('connection', (socket) => {
     socket.on('admin-create-room', (data) => {
         try {
             const { roomId, settings } = data;
-            
+
             if (!roomId || roomId.trim().length === 0) {
                 socket.emit('error', { message: 'Room ID is required' });
                 return;
@@ -170,13 +170,13 @@ io.on('connection', (socket) => {
             }
 
             const game = gameManager.createAdminRoom(socket.id, roomId, settings);
-            
+
             socket.join(roomId);
             socket.emit('admin-room-created', {
                 roomId: roomId,
                 game: game
             });
-            
+
             console.log(`Admin room ${roomId} created`);
         } catch (error) {
             console.error('Create admin room error:', error);
@@ -189,7 +189,7 @@ io.on('connection', (socket) => {
         try {
             const { roomId } = data;
             const game = gameManager.games.get(roomId);
-            
+
             if (!game || game.adminId !== socket.id) {
                 socket.emit('error', { message: 'Unauthorized' });
                 return;
@@ -197,7 +197,7 @@ io.on('connection', (socket) => {
 
             // Notify all players
             socket.to(roomId).emit('room-closed', { message: 'Room has been closed by admin' });
-            
+
             // Remove game
             gameManager.games.delete(roomId);
             console.log(`Admin room ${roomId} closed`);
@@ -210,30 +210,30 @@ io.on('connection', (socket) => {
     socket.on('join-room', (data) => {
         try {
             const { roomCode, playerName } = data;
-            
+
             if (!roomCode || !playerName) {
                 socket.emit('error', { message: 'Room code and player name are required' });
                 return;
             }
 
             const game = gameManager.joinGame(roomCode.toUpperCase(), socket.id, playerName.trim());
-            
+
             if (!game) {
                 socket.emit('error', { message: 'Game room not found' });
                 return;
             }
-            
+
             socket.join(roomCode.toUpperCase());
             socket.emit('room-joined', { game });
-            
+
             const newPlayer = game.players.find(p => p.id === socket.id);
-            
+
             // Notify other players
             socket.to(roomCode.toUpperCase()).emit('player-joined', {
                 player: newPlayer,
                 playerCount: game.players.filter(p => p.connected).length
             });
-            
+
             // Notify admin if this is an admin room
             if (game.adminId) {
                 io.to(game.adminId).emit('admin-player-joined', {
@@ -241,7 +241,7 @@ io.on('connection', (socket) => {
                     playerCount: game.players.filter(p => p.connected).length
                 });
             }
-            
+
             console.log(`${playerName} joined room ${roomCode.toUpperCase()}`);
         } catch (error) {
             console.error('Join room error:', error);
@@ -254,19 +254,19 @@ io.on('connection', (socket) => {
         try {
             const { roomCode, imageData } = data;
             const game = gameManager.games.get(roomCode);
-            
+
             if (!game || game.hostId !== socket.id) {
                 socket.emit('error', { message: 'Unauthorized' });
                 return;
             }
-            
+
             // Store base64 image directly (in production, save to file/cloud storage)
             game.gameImage = imageData;
-            
+
             io.to(roomCode).emit('image-uploaded', {
                 imageUrl: imageData
             });
-            
+
             console.log(`Image uploaded for room ${roomCode}`);
         } catch (error) {
             console.error('Image upload error:', error);
@@ -279,15 +279,15 @@ io.on('connection', (socket) => {
         try {
             const { roomCode, position } = data;
             const game = gameManager.games.get(roomCode);
-            
+
             if (!game || game.hostId !== socket.id) {
                 socket.emit('error', { message: 'Unauthorized' });
                 return;
             }
-            
+
             game.targetPosition = position;
             io.to(roomCode).emit('target-calibrated', { position });
-            
+
             console.log(`Target calibrated for room ${roomCode}`);
         } catch (error) {
             console.error('Calibrate target error:', error);
@@ -300,12 +300,12 @@ io.on('connection', (socket) => {
         try {
             const { roomId, gameImage, targetPosition, settings } = data;
             const game = gameManager.games.get(roomId);
-            
+
             if (!game || game.adminId !== socket.id) {
                 socket.emit('error', { message: 'Unauthorized' });
                 return;
             }
-            
+
             if (!gameImage || !targetPosition) {
                 socket.emit('error', { message: 'Game not ready - missing image or target' });
                 return;
@@ -316,7 +316,7 @@ io.on('connection', (socket) => {
                 socket.emit('error', { message: `Need at least ${game.settings.minPlayers} players to start` });
                 return;
             }
-            
+
             // Update game with admin settings
             game.gameImage = gameImage;
             game.targetPosition = targetPosition;
@@ -328,15 +328,15 @@ io.on('connection', (socket) => {
             game.totalRounds = settings.totalRounds;
             game.gameState = 'playing';
             game.currentRound = 1;
-            
+
             // Notify admin
             socket.emit('admin-game-started', { game });
-            
+
             // Notify all players
             io.to(roomId).emit('game-started', { game });
-            
+
             console.log(`Admin started game in room ${roomId}`);
-            
+
             // Start first round
             setTimeout(() => {
                 startRound(roomId);
@@ -351,12 +351,12 @@ io.on('connection', (socket) => {
     socket.on('admin-pause-game', (data) => {
         const { roomId } = data;
         const game = gameManager.games.get(roomId);
-        
+
         if (!game || game.adminId !== socket.id) {
             socket.emit('error', { message: 'Unauthorized' });
             return;
         }
-        
+
         game.gameState = 'paused';
         io.to(roomId).emit('game-paused');
     });
@@ -364,12 +364,12 @@ io.on('connection', (socket) => {
     socket.on('admin-next-round', (data) => {
         const { roomId } = data;
         const game = gameManager.games.get(roomId);
-        
+
         if (!game || game.adminId !== socket.id) {
             socket.emit('error', { message: 'Unauthorized' });
             return;
         }
-        
+
         if (game.currentRound < game.totalRounds) {
             game.currentRound++;
             startRound(roomId);
@@ -379,32 +379,32 @@ io.on('connection', (socket) => {
     socket.on('admin-end-game', (data) => {
         const { roomId } = data;
         const game = gameManager.games.get(roomId);
-        
+
         if (!game || game.adminId !== socket.id) {
             socket.emit('error', { message: 'Unauthorized' });
             return;
         }
-        
+
         endGame(roomId);
     });
 
     socket.on('admin-kick-player', (data) => {
         const { roomId, playerId } = data;
         const game = gameManager.games.get(roomId);
-        
+
         if (!game || game.adminId !== socket.id) {
             socket.emit('error', { message: 'Unauthorized' });
             return;
         }
-        
+
         const player = game.players.find(p => p.id === playerId);
         if (player) {
             // Remove player
             gameManager.removePlayer(playerId);
-            
+
             // Notify player they were kicked
             io.to(playerId).emit('kicked', { message: 'You have been removed from the game by the admin' });
-            
+
             // Notify admin
             socket.emit('admin-player-left', {
                 playerId: playerId,
@@ -418,17 +418,17 @@ io.on('connection', (socket) => {
         try {
             const { roomCode, position, timestamp } = data;
             const game = gameManager.games.get(roomCode);
-            
+
             if (!game || game.gameState !== 'guessing') {
                 return;
             }
-            
+
             // Calculate score based on accuracy
             const points = calculateScore(position, game.targetPosition);
             gameManager.updatePlayerScore(roomCode, socket.id, points);
-            
+
             const player = game.players.find(p => p.id === socket.id);
-            
+
             io.to(roomCode).emit('player-scored', {
                 playerId: socket.id,
                 playerName: player.name,
@@ -436,11 +436,11 @@ io.on('connection', (socket) => {
                 position: position,
                 totalScore: player.score
             });
-            
+
             // Update leaderboard
             const leaderboard = gameManager.getLeaderboard(roomCode);
             io.to(roomCode).emit('leaderboard-update', { leaderboard });
-            
+
             // Notify admin
             if (game.adminId) {
                 io.to(game.adminId).emit('admin-player-scored', {
@@ -450,7 +450,7 @@ io.on('connection', (socket) => {
                     leaderboard: leaderboard
                 });
             }
-            
+
             console.log(`${player.name} scored ${points} points in room ${roomCode}`);
         } catch (error) {
             console.error('Player click error:', error);
@@ -461,7 +461,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         try {
             console.log('User disconnected:', socket.id);
-            
+
             const roomCode = gameManager.getPlayerRoom(socket.id);
             if (roomCode) {
                 const game = gameManager.removePlayer(socket.id);
@@ -486,10 +486,10 @@ io.on('connection', (socket) => {
 function startRound(roomCode) {
     const game = gameManager.games.get(roomCode);
     if (!game) return;
-    
+
     game.gameState = 'viewing';
     game.roundStartTime = Date.now();
-    
+
     // Notify admin
     if (game.adminId) {
         io.to(game.adminId).emit('admin-round-update', {
@@ -498,7 +498,7 @@ function startRound(roomCode) {
             timeRemaining: game.settings.viewTime / 1000
         });
     }
-    
+
     // Show image to all players
     io.to(roomCode).emit('show-image', {
         round: game.currentRound,
@@ -506,13 +506,13 @@ function startRound(roomCode) {
         targetPosition: game.targetPosition,
         viewTime: game.settings.viewTime
     });
-    
+
     console.log(`Round ${game.currentRound} started in room ${roomCode}`);
-    
+
     // Hide image and start guessing phase
     setTimeout(() => {
         game.gameState = 'guessing';
-        
+
         // Notify admin
         if (game.adminId) {
             io.to(game.adminId).emit('admin-round-update', {
@@ -521,35 +521,35 @@ function startRound(roomCode) {
                 timeRemaining: game.settings.guessTime / 1000
             });
         }
-        
+
         io.to(roomCode).emit('hide-image', {
             guessTime: game.settings.guessTime
         });
-        
+
         // End round after guess time
         setTimeout(() => {
             endRound(roomCode);
         }, game.settings.guessTime);
-        
+
     }, game.settings.viewTime);
 }
 
 function endRound(roomCode) {
     const game = gameManager.games.get(roomCode);
     if (!game) return;
-    
+
     game.gameState = 'results';
-    
+
     const leaderboard = gameManager.getLeaderboard(roomCode);
-    
+
     io.to(roomCode).emit('round-ended', {
         round: game.currentRound,
         leaderboard: leaderboard,
         correctPosition: game.targetPosition
     });
-    
+
     console.log(`Round ${game.currentRound} ended in room ${roomCode}`);
-    
+
     // Check if game is complete
     if (game.currentRound >= game.totalRounds) {
         setTimeout(() => {
@@ -567,17 +567,17 @@ function endRound(roomCode) {
 function endGame(roomCode) {
     const game = gameManager.games.get(roomCode);
     if (!game) return;
-    
+
     game.gameState = 'ended';
     const finalLeaderboard = gameManager.getLeaderboard(roomCode);
-    
+
     io.to(roomCode).emit('game-ended', {
         finalLeaderboard: finalLeaderboard,
         winner: finalLeaderboard[0] || null
     });
-    
+
     console.log(`Game ended in room ${roomCode}`);
-    
+
     // Clean up game after 10 minutes
     setTimeout(() => {
         gameManager.games.delete(roomCode);
@@ -587,10 +587,10 @@ function endGame(roomCode) {
 
 function calculateScore(clickPosition, targetPosition) {
     const distance = Math.sqrt(
-        Math.pow(clickPosition.x - targetPosition.x, 2) + 
+        Math.pow(clickPosition.x - targetPosition.x, 2) +
         Math.pow(clickPosition.y - targetPosition.y, 2)
     );
-    
+
     // Score based on distance (closer = higher score)
     if (distance <= 5) return 100;      // Perfect hit
     if (distance <= 15) return 75;     // Very close
@@ -615,12 +615,32 @@ app.use(express.static('.'));
 
 // Serve main game page
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(path.join(__dirname, 'index.html'), (err) => {
+        if (err) {
+            console.error('Error serving index.html:', err);
+            res.status(404).send('Game page not found');
+        }
+    });
 });
 
 // Serve admin panel
 app.get('/admin.html', (req, res) => {
-    res.sendFile(__dirname + '/admin.html');
+    res.sendFile(path.join(__dirname, 'admin.html'), (err) => {
+        if (err) {
+            console.error('Error serving admin.html:', err);
+            res.status(404).send('Admin panel not found');
+        }
+    });
+});
+
+// Serve admin panel (alternative route)
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'), (err) => {
+        if (err) {
+            console.error('Error serving admin.html:', err);
+            res.status(404).send('Admin panel not found');
+        }
+    });
 });
 
 // Health check endpoint
@@ -631,7 +651,24 @@ app.get('/status', (req, res) => {
         <p>Active Games: ${gameManager.games.size}</p>
         <p>Uptime: ${Math.floor(process.uptime())} seconds</p>
         <p><a href="/">🎮 Play Game</a> | <a href="/admin.html">👑 Admin Panel</a></p>
+        <p>Current directory: ${__dirname}</p>
     `);
+});
+
+// Debug route to list files
+app.get('/debug', (req, res) => {
+    const fs = require('fs');
+    try {
+        const files = fs.readdirSync(__dirname);
+        res.json({
+            directory: __dirname,
+            files: files,
+            hasIndexHtml: files.includes('index.html'),
+            hasAdminHtml: files.includes('admin.html')
+        });
+    } catch (error) {
+        res.json({ error: error.message });
+    }
 });
 
 // Start server
