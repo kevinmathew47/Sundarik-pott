@@ -3,7 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+// const { v4: uuidv4 } = require('uuid'); // Removed unused import
 
 const app = express();
 const server = http.createServer(app);
@@ -416,7 +416,7 @@ io.on('connection', (socket) => {
     // Player click
     socket.on('player-click', (data) => {
         try {
-            const { roomCode, position, timestamp } = data;
+            const { roomCode, position } = data;
             const game = gameManager.games.get(roomCode);
 
             if (!game || game.gameState !== 'guessing') {
@@ -601,7 +601,7 @@ function calculateScore(clickPosition, targetPosition) {
 }
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_, res) => {
     res.json({
         status: 'healthy',
         activeGames: gameManager.games.size,
@@ -614,7 +614,7 @@ app.get('/health', (req, res) => {
 app.use(express.static('.'));
 
 // Serve main game page
-app.get('/', (req, res) => {
+app.get('/', (_, res) => {
     res.sendFile(path.join(__dirname, 'index.html'), (err) => {
         if (err) {
             console.error('Error serving index.html:', err);
@@ -624,7 +624,7 @@ app.get('/', (req, res) => {
 });
 
 // Serve admin panel
-app.get('/admin.html', (req, res) => {
+app.get('/admin.html', (_, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'), (err) => {
         if (err) {
             console.error('Error serving admin.html:', err);
@@ -634,7 +634,7 @@ app.get('/admin.html', (req, res) => {
 });
 
 // Serve admin panel (alternative route)
-app.get('/admin', (req, res) => {
+app.get('/admin', (_, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'), (err) => {
         if (err) {
             console.error('Error serving admin.html:', err);
@@ -644,7 +644,7 @@ app.get('/admin', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/status', (req, res) => {
+app.get('/status', (_, res) => {
     res.send(`
         <h1>🎯 Face Memory Challenge Server</h1>
         <p>Server is running and ready for multiplayer games!</p>
@@ -656,7 +656,7 @@ app.get('/status', (req, res) => {
 });
 
 // Debug route to list files
-app.get('/debug', (req, res) => {
+app.get('/debug', (_, res) => {
     const fs = require('fs');
     try {
         const files = fs.readdirSync(__dirname);
