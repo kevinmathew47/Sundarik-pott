@@ -81,6 +81,7 @@ class ClientGame {
         });
 
         this.socket.on('game-ended', (data) => {
+            console.log('🏆 Game ended! Showing final results:', data);
             this.handleGameEnded(data);
         });
 
@@ -196,17 +197,6 @@ class ClientGame {
                     <div class="loading-spinner"></div>
                     <h2>🎯 Get Ready!</h2>
                     <p>The admin is preparing the first round...</p>
-                    <button onclick="forceGuessPhase()" style="
-                        margin-top: 20px;
-                        padding: 10px 20px;
-                        background: #FF8C00;
-                        color: white;
-                        border: none;
-                        border-radius: 10px;
-                        cursor: pointer;
-                        font-size: 16px;
-                        font-weight: bold;
-                    ">🔧 Skip to Game Board (Debug)</button>
                 </div>
             `;
             overlay.style.cssText = `
@@ -431,7 +421,7 @@ class ClientGame {
             gameBoard.style.position = 'relative';
             gameBoard.style.margin = '0 auto';
             gameBoard.style.zIndex = '10';
-            gameBoard.style.border = '5px solid red'; // Temporary debug border
+            // Remove debug border - use default styling
             
             // Ensure parent containers are also visible
             const gamePhase = document.getElementById('game-phase');
@@ -489,17 +479,24 @@ class ClientGame {
     handleGameEnded(data) {
         this.gameState = 'ended';
         
+        console.log('Switching to final results phase...');
+        
         // Switch to final results
         document.querySelectorAll('.phase').forEach(phase => phase.classList.remove('active'));
         document.getElementById('final-results').classList.add('active');
         
-        // Update winner
-        const winner = data.winner;
-        if (winner) {
-            this.showNotification(`🏆 ${winner.name} wins with ${winner.score} points!`, 'success');
-            
+        // Update leaderboard and winner
+        if (data.finalLeaderboard && data.finalLeaderboard.length > 0) {
             // Update podium with real data
             this.updatePodium(data.finalLeaderboard);
+            
+            // Show winner notification
+            const winner = data.winner || data.finalLeaderboard[0];
+            if (winner) {
+                this.showNotification(`🏆 ${winner.name} wins with ${winner.score} points!`, 'success');
+            }
+        } else {
+            console.warn('No final leaderboard data received');
         }
         
         // Add restart functionality
@@ -510,6 +507,8 @@ class ClientGame {
         document.getElementById('new-game-btn').onclick = () => {
             location.reload(); // Simple restart - new game
         };
+        
+        console.log('Final results displayed successfully');
     }
 
     updateWaitingRoom() {
@@ -556,18 +555,32 @@ class ClientGame {
     }
 
     updatePodium(leaderboard) {
+        console.log('Updating podium with leaderboard:', leaderboard);
+        
         const positions = ['first', 'second', 'third'];
         
         positions.forEach((position, index) => {
             const element = document.getElementById(`${position}-place`);
-            if (leaderboard[index]) {
-                element.querySelector('.place-name').textContent = leaderboard[index].name;
-                element.querySelector('.place-score').textContent = `${leaderboard[index].score} pts`;
-                element.style.display = 'block';
+            if (element && leaderboard[index]) {
+                const nameElement = element.querySelector('.place-name');
+                const scoreElement = element.querySelector('.place-score');
+                
+                if (nameElement && scoreElement) {
+                    nameElement.textContent = leaderboard[index].name;
+                    scoreElement.textContent = `${leaderboard[index].score} pts`;
+                    element.style.display = 'block';
+                    console.log(`Updated ${position} place:`, leaderboard[index]);
+                } else {
+                    console.warn(`Missing name or score element for ${position} place`);
+                }
             } else {
-                element.style.display = 'none';
+                if (element) {
+                    element.style.display = 'none';
+                }
             }
         });
+        
+        console.log('Podium update complete');
     }
 
     createGameBoard() {
@@ -729,11 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         
-        console.log('Client game initialized.');
-        console.log('Debug functions available:');
-        console.log('- testGameBoard() - Test game board display');
-        console.log('- forceGuessPhase() - Force guessing phase');
-        console.log('- debugClient() - Show debug info');
+        console.log('Client game initialized and ready to play!');
     } else {
         console.error('Socket.IO not available');
         alert('Socket.IO not loaded. Please check your internet connection.');
